@@ -379,7 +379,6 @@ public class MainActivity extends AppCompatActivity implements ForecastFragment.
 
     private void sendWeatherData(String maxTemperature, String minTemperature, Bitmap bitmap) {
         PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/weather");
-        putDataMapReq.getDataMap().putLong(WEATHER_KEY, System.currentTimeMillis());
         putDataMapReq.getDataMap().putString(MAX_TEMPERATURE_KEY, maxTemperature);
         putDataMapReq.getDataMap().putString(MIN_TEMPERATURE_KEY, minTemperature);
         Asset asset = createAssetFromBitmap(bitmap);
@@ -390,9 +389,9 @@ public class MainActivity extends AppCompatActivity implements ForecastFragment.
                     @Override
                     public void onResult(DataApi.DataItemResult dataItemResult) {
                         if (dataItemResult.getStatus().isSuccess()) {
-                            Log.d("NARANJA", "YEEEEEES :D");
+                            Log.d(MainActivity.class.getSimpleName(), "Data Successfully sent to wearable");
                         } else {
-                            Log.d("NARANJA", "NO :(");
+                            Log.d(MainActivity.class.getSimpleName(), "Error sending data to wearable");
                         }
                     }
                 });

@@ -21,7 +21,6 @@ import android.preference.PreferenceManager;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
 
@@ -143,24 +142,22 @@ public class DigitalWatchFaceService extends CanvasWatchFaceService  {
         float mCenterLineWidth;
         Bitmap mWeatherBitmap = null;
         Bitmap mWeatherBitmapTemp = null;
+        float mBitmapXStartRate;
 
         String mMaxTemperatureString = "";
         String mMinTemperatureString = "";
 
         @Override // DataApi.DataListener
         public void onDataChanged(DataEventBuffer dataEvents) {
-            Log.d("NARANJA", "DATA WAS CHANGED VEDA?");
             for (DataEvent dataEvent : dataEvents) {
                 if (dataEvent.getType() == DataEvent.TYPE_CHANGED) {
                     DataMap dataMap = DataMapItem.fromDataItem(dataEvent.getDataItem()).getDataMap();
                     String path = dataEvent.getDataItem().getUri().getPath();
                     if (path.equals("/weather")) {
-                        long timestamp = dataMap.getLong(WEATHER_KEY);
                         String maxTemperature = dataMap.getString(MAX_TEMPERATURE_KEY);
                         String minTemperature = dataMap.getString(MIN_TEMPERATURE_KEY);
                         Asset asset = dataMap.getAsset(WEATHER_BITMAP_KEY);
                         Bitmap bitmap = loadBitmapFromAsset(asset);
-                        Log.d("NARANJA", "YES SON, DATA WAS CHANGED: " + timestamp + ", " + maxTemperature + ", " + minTemperature);
                         updateUi(maxTemperature, minTemperature, bitmap);
                     }
                 }
@@ -306,16 +303,16 @@ public class DigitalWatchFaceService extends CanvasWatchFaceService  {
 
         private void adjustBitmap() {
             if (isInAmbientMode()) {
-                mWeatherBitmap = mWeatherBitmapTemp;
-            } else {
                 mWeatherBitmapTemp = mWeatherBitmap;
                 mWeatherBitmap = null;
+            } else {
+                mWeatherBitmap = mWeatherBitmapTemp;
             }
         }
 
         private void adjustPaintColorToCurrentMode(Paint paint, int interactiveColor,
                                                    int ambientColor) {
-            paint.setColor(isInAmbientMode() ? ambientColor : interactiveColor);
+            paint.setColor(isInAmbientMode() ? interactiveColor : ambientColor);
         }
 
         @Override
@@ -371,7 +368,7 @@ public class DigitalWatchFaceService extends CanvasWatchFaceService  {
             }
 
             float maxTemperatureXPosition = centerX - (x/2);
-            float minTemperatureXPosition = centerX + (x/2);
+            float minTemperatureXPosition = centerX + (x);
             if (mWeatherBitmap == null) {
                 maxTemperatureXPosition = centerX - (3 * x/2);
             }
@@ -384,13 +381,15 @@ public class DigitalWatchFaceService extends CanvasWatchFaceService  {
             if (mWeatherBitmap != null) {
                 canvas.drawBitmap(mWeatherBitmap,
                                   null,
-                                  new RectF(centerX - (2 * x),
+                                  new RectF(centerX - (mBitmapXStartRate * x),
                                             mYOffset + (mLineHeight * 3) - 5,
-                                            centerX - x/2,
+                                            centerX - x,
                                             mYOffset + (mLineHeight * 4) + 10),
                                   mWeatherBitmapPaint);
             }
 
+
+            x = mMinTemperaturePaint.measureText(mMinTemperatureString);
             canvas.drawText(mMinTemperatureString,
                             minTemperatureXPosition,
                             mYOffset + (mLineHeight * 4),
@@ -520,6 +519,8 @@ public class DigitalWatchFaceService extends CanvasWatchFaceService  {
             mXOffset = resources.getDimension(isRound ? R.dimen.digital_x_offset_round : R.dimen.digital_x_offset);
             float textSize = resources.getDimension(isRound ? R.dimen.digital_text_size_round :
                                                             R.dimen.digital_text_size);
+
+            mBitmapXStartRate = isRound ? 2 : 5/2;
 
             mDatePaint.setTextSize(resources.getDimension(R.dimen.digital_date_text_size));
             mHourPaint.setTextSize(textSize);
